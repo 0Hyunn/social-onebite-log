@@ -1,14 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSignup } from "@/hooks/mutations/use-sign-up";
+import { generateErrorMessage } from "@/lib/error";
 import { useState } from "react";
 import { Link } from "react-router";
+import { toast } from "sonner";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { mutate: signUp } = useSignup();
+  const { mutate: signUp, isPending: isSignUpPending } = useSignup({
+    onError: (error) => {
+      const message = generateErrorMessage(error);
+      toast.error(message, { position: "top-center" });
+    },
+  });
 
   const handleSignUpClick = () => {
     if (email.trim() === "") return;
@@ -31,6 +38,7 @@ export default function SignUpPage() {
           placeholder="example@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={isSignUpPending}
         />
 
         {/* 비밀번호 입력 */}
@@ -40,10 +48,15 @@ export default function SignUpPage() {
           placeholder="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={isSignUpPending}
         />
       </div>
       <div>
-        <Button className="w-full" onClick={handleSignUpClick}>
+        <Button
+          className="w-full"
+          onClick={handleSignUpClick}
+          disabled={isSignUpPending}
+        >
           회원가입
         </Button>
       </div>
