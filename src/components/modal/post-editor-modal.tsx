@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useCreatePost } from "@/hooks/mutations/post/use-create-post";
 import { toast } from "sonner";
 import { Carousel, CarouselContent, CarouselItem } from "../ui/carousel";
+import { useSession } from "@/store/session";
 
 // 이미지 타입 정의
 type Image = {
@@ -14,6 +15,8 @@ type Image = {
 };
 
 export default function PostEditorModal() {
+  const session = useSession();
+
   const { isOpen, close } = usePostEditorModal();
   const { mutate: createPost, isPending: isCreatePostPending } = useCreatePost({
     onSuccess: () => {
@@ -41,7 +44,11 @@ export default function PostEditorModal() {
   // 모달 저장 버튼 클릭 시, 포스트 생성 요청 (supabase insert)
   const handleCreatePostClick = () => {
     if (content.trim() === "") return;
-    createPost(content);
+    createPost({
+      content,
+      images: images.map((image) => image.file),
+      userId: session!.user.id,
+    });
   };
 
   // 이미지 선택 시, 이미지 상태 업데이트
@@ -81,7 +88,7 @@ export default function PostEditorModal() {
     }
   }, [content]);
 
-  // 모달 열릴 때 텍스트 영역에 포커스
+  // 모달 열릴 때 텍스트 영역에 포커스, 텍스트영역과 이미지 영역 초기화
   useEffect(() => {
     if (!isOpen) return;
     textareaRef.current?.focus();
