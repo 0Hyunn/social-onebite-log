@@ -7,6 +7,7 @@ import { useCreatePost } from "@/hooks/mutations/post/use-create-post";
 import { toast } from "sonner";
 import { Carousel, CarouselContent, CarouselItem } from "../ui/carousel";
 import { useSession } from "@/store/session";
+import { useOpenAlertModal } from "@/store/alert-modal";
 
 // 이미지 타입 정의
 type Image = {
@@ -18,6 +19,9 @@ export default function PostEditorModal() {
   const session = useSession();
 
   const { isOpen, close } = usePostEditorModal();
+
+  const openAlertModal = useOpenAlertModal();
+
   const { mutate: createPost, isPending: isCreatePostPending } = useCreatePost({
     onSuccess: () => {
       close();
@@ -37,7 +41,44 @@ export default function PostEditorModal() {
   // 이미지 추가 버튼 클릭 시, 파일 입력 요청
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 내용 변경 시 텍스트 영역 높이 자동 조절
+  // 초기에는 auto로 설정하고, 내용이 변경되면 scrollHeight를 사용하여 높이 조절
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
+    }
+  }, [content]);
+
+  // 모달 열릴 때 텍스트 영역에 포커스, 텍스트영역과 이미지 영역 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      images.forEach((image) => {
+        // 이미지 미리보기 URL 해제 (메모리로 부터 해제)
+        URL.revokeObjectURL(image.previewUrl);
+      });
+      return;
+    }
+    textareaRef.current?.focus();
+
+    setContent("");
+    setImages([]);
+  }, [isOpen]);
+
+  // 모달 닫기 버튼 클릭 시, 모달 닫기
   const handleCloseModal = () => {
+    if (content !== "" || images.length !== 0) {
+      openAlertModal({
+        title: "게시글 작성이 마무리 되지 않았습니다.",
+        description:
+          "게시글 작성이 마무리 되지 않았습니다. 정말 닫으시겠습니까?",
+        onPositive: () => {
+          close();
+        },
+      });
+      return;
+    }
     close();
   };
 
@@ -53,7 +94,7 @@ export default function PostEditorModal() {
 
   // 이미지 선택 시, 이미지 상태 업데이트
   const handleSelectImages = (e: ChangeEvent<HTMLInputElement>) => {
-    // 파일이 선택되었는지 확인
+    // 파일이 있다면? 배열 형태로 저장
     if (e.target.files) {
       const files = Array.from(e.target.files);
 
@@ -76,26 +117,9 @@ export default function PostEditorModal() {
     setImages((prevImages) =>
       prevImages.filter((item) => item.previewUrl !== image.previewUrl),
     );
+
+    URL.revokeObjectURL(image.previewUrl);
   };
-
-  // 내용 변경 시 텍스트 영역 높이 자동 조절
-  // 초기에는 auto로 설정하고, 내용이 변경되면 scrollHeight를 사용하여 높이 조절
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height =
-        textareaRef.current.scrollHeight + "px";
-    }
-  }, [content]);
-
-  // 모달 열릴 때 텍스트 영역에 포커스, 텍스트영역과 이미지 영역 초기화
-  useEffect(() => {
-    if (!isOpen) return;
-    textareaRef.current?.focus();
-
-    setContent("");
-    setImages([]);
-  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseModal}>
