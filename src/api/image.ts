@@ -22,3 +22,18 @@ export async function uploadImage({
 
   return publicUrl;
 }
+
+// 특정 경로의 이미지 삭제 함수
+export async function deleteImageInPath(path: string) {
+  const { data: files, error: fetchFilesError } = await supabase.storage
+    .from(BUCKET_NAME)
+    .list(path);
+
+  if (fetchFilesError) throw fetchFilesError;
+
+  const { error: removeError } = await supabase.storage
+    .from(BUCKET_NAME)
+    .remove(files.map((file) => `${path}/${file.name}`));
+
+  if (removeError) throw removeError;
+}
