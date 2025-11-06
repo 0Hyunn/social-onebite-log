@@ -1,6 +1,15 @@
 import supabase from "@/lib/supabase";
 import type { Provider } from "@supabase/supabase-js";
 
+// supabase에 로그아웃 요청하는 함수
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    await supabase.auth.signOut({ scope: "local" });
+  }
+}
+
 // supabase에 회원가입 요청하는 함수
 export async function signUp({
   email,
