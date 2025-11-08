@@ -9,18 +9,25 @@ function toNestedComment(comments: Comment[]): NestedComment[] {
 
   comments.forEach((comment) => {
     // 댓글일 때 (더 이상 부모 댓글이 없는 경우)
-    if (!comment.parent_comment_id) {
+    if (!comment.root_comment_id) {
       result.push({ ...comment, children: [] });
     } else {
       // 대댓글일 때
-      const parentCommentIndex = result.findIndex(
+      const rootCommentIndex = result.findIndex(
+        (item) => item.id === comment.root_comment_id,
+      );
+
+      const parentComment = comments.find(
         (item) => item.id === comment.parent_comment_id,
       );
 
-      result[parentCommentIndex].children.push({
+      if (rootCommentIndex === -1) return;
+      if (!parentComment) return;
+
+      result[rootCommentIndex].children.push({
         ...comment,
         children: [],
-        parentComment: result[parentCommentIndex],
+        parentComment: parentComment,
       });
     }
   });
